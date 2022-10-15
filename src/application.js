@@ -79,10 +79,11 @@ const getData = async () => {
     return;
   }
   const data = await res.json();
+  //exportToJsonFile(data)
+
   console.log(data);
   const years = Object.values(data.dimension.Vuosi.category.label);
   const aluet = Object.values(data.dimension.Alue.category.label);
-  const population = data.value;
   const values = data.value;
 
   const nTiedot = Object.values(data.dimension.Tiedot.category.label).length;
@@ -107,29 +108,27 @@ const getData = async () => {
     for (let year = 0; year < nYears; year++) {
       //aluePopu.push(population[year * nAluet + idx])
       alueBirths.push(values[nTiedot * nAluet * year + idx * nTiedot + 0]);
-      console.log(nTiedot * nAluet * year + idx * nTiedot + 0);
       alueDeaths.push(values[nTiedot * nAluet * year + idx * nTiedot + 1]);
-      console.log(nTiedot * nAluet * year + idx * nTiedot + 1);
       aluePopu.push(values[nTiedot * nAluet * year + idx * nTiedot + 2]);
-      console.log(nTiedot * nAluet * year + idx * nTiedot + 2);
     }
     dataset.data[idx] = {
       name: alue,
       values: aluePopu
     };
 
-    if (alue === "WHOLE COUNTRY") {
-      dataset2.data[0] = {
-        name: "births",
-        values: alueBirths
-      };
+    dataset2.data[0] = {
+      name: "births",
+      values: alueBirths
+    };
 
-      dataset2.data[1] = {
-        name: "deaths",
-        values: alueDeaths
-      };
-    }
+    dataset2.data[1] = {
+      name: "deaths",
+      values: alueDeaths
+    };
   });
+
+  sessionStorage.setItem("dataset2", JSON.stringify(dataset2));
+  console.log(dataset2);
   return { dataset, dataset2 };
 };
 
@@ -154,6 +153,18 @@ const buildChart = (dataset) => {
   });
 };
 
+/*function exportToJsonFile(jsonData) {
+  let dataStr = JSON.stringify(jsonData);
+  let dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+
+  let exportFileDefaultName = 'data.json';
+
+  let linkElement = document.createElement('a');
+  linkElement.setAttribute('href', dataUri);
+  linkElement.setAttribute('download', exportFileDefaultName);
+  linkElement.click();
+}*/
+
 const submitButton = document.getElementById("submit-data");
 const inputArea = document.getElementById("input-area");
 const addPrediction = document.getElementById("add-data");
@@ -164,14 +175,12 @@ const reloadchart = async () => {
   buildChart(dataset);
   return dataset;
 };
-
-const { areaName, areaCode } = getAreaCode();
 //console.log(areaName)
 dataset = reloadchart();
 
 const addArea = (code) => {
   if (!jsonQuery.query[1].selection.values.includes(code)) {
-    jsonQuery.query[1].selection.values.push(code);
+    jsonQuery.query[1].selection.values[0] = code;
   }
 };
 
@@ -198,7 +207,7 @@ submitButton.addEventListener("click", async function () {
   console.log("code is " + code);
 
   addArea(code);
-  reloadchart();
+  await reloadchart();
 });
 
 addPrediction.addEventListener("click", () => {
@@ -209,17 +218,16 @@ addPrediction.addEventListener("click", () => {
     dataset.data[alueIdx].values.forEach((point, point_Idx) => {
       point = Number(point);
       let next_point = Number(dataset.data[alueIdx].values[point_Idx + 1]);
-      if (point_Idx == nYears - 1) {
+      if (point_Idx === nYears - 1) {
         meanDelta = meanDelta / (nYears - 1) + point;
       } else {
         meanDelta = meanDelta + (next_point - point);
       }
-      console.log(meanDelta);
     });
     dataset.data[alueIdx].values.push(meanDelta);
-    console.log(meanDelta);
-    console.log(dataset.data[alueIdx].values);
   });
   console.log(dataset);
   buildChart(dataset);
 });
+
+module.exports = { dataset };

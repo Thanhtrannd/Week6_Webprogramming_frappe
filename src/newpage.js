@@ -1,7 +1,12 @@
 import { Chart } from "frappe-charts/dist/frappe-charts.esm.js";
+//var http = require("http");
+//const { dataset } = require("./application.js");
+//console.log(dataset);
+//import dataset from "./application";
+//console.log(dataset);
+//var dataset;
 
-var dataset;
-var dataset2;
+//var dataset2;
 
 const URL =
   "https://statfin.stat.fi/PxWeb/api/v1/en/StatFin/synt/statfin_synt_pxt_12dy.px";
@@ -72,7 +77,6 @@ const getData = async () => {
   console.log(data);
   const years = Object.values(data.dimension.Vuosi.category.label);
   const aluet = Object.values(data.dimension.Alue.category.label);
-  const population = data.value;
   const values = data.value;
 
   const nTiedot = Object.values(data.dimension.Tiedot.category.label).length;
@@ -145,9 +149,12 @@ const buildNewChart = (dataset2) => {
 };
 
 const reloadchart = async () => {
-  let { dataset, dataset2 } = await getData();
+  //let { dataset, dataset2 } = await getData();
+  var dataset2 = await JSON.parse(sessionStorage.getItem("dataset2"));
   console.log(dataset2);
   buildNewChart(dataset2);
 };
+
+//reloadchart();
 
 reloadchart();
