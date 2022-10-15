@@ -1,3 +1,6 @@
+var dataset;
+var dataset2;
+
 const URL =
   "https://statfin.stat.fi/PxWeb/api/v1/en/StatFin/synt/statfin_synt_pxt_12dy.px";
 
@@ -44,7 +47,7 @@ const jsonQuery = {
       code: "Tiedot",
       selection: {
         filter: "item",
-        values: ["vaesto"]
+        values: ["vaesto", "vm01", "vm11"]
       }
     }
   ],
@@ -55,17 +58,13 @@ const jsonQuery = {
 
 const getAreaCode = async () => {
   const url = URL;
-  const res = await fetch(url)
-  const data = await res.json()
-  console.log(data)
+  const res = await fetch(url);
+  const areadata = await res.json();
 
-  let areaName = data.variables[1].valueTexts
-  console.log(areaName)
-  let areaCode = data.variables[1].values
-  console.log(areaCode)
-  return {areaName, areaCode};
-}
-
+  let areaName = areadata.variables[1].valueTexts;
+  let areaCode = areadata.variables[1].values;
+  return { areaName, areaCode };
+};
 
 const getData = async () => {
   const url = URL;
@@ -78,13 +77,14 @@ const getData = async () => {
     return;
   }
   const data = await res.json();
-
+  console.log(data);
   const years = Object.values(data.dimension.Vuosi.category.label);
   const aluet = Object.values(data.dimension.Alue.category.label);
-  const labels = Object.values(data.dimension.Vuosi.category.label);
   const population = data.value;
+  const values = data.value;
 
-  
+  const nTiedot = Object.values(data.dimension.Tiedot.category.label).length;
+
   let nAluet = aluet.length;
   let nYears = years.length;
 
@@ -92,19 +92,43 @@ const getData = async () => {
     years: years,
     data: []
   };
+
+  dataset2 = {
+    years: years,
+    data: []
+  };
+
   aluet.forEach((alue, idx) => {
-    let aluePopu = []
+    let aluePopu = [];
+    let alueBirths = [];
+    let alueDeaths = [];
     for (let year = 0; year < nYears; year++) {
-      aluePopu.push(population[year * nAluet + idx])
+      //aluePopu.push(population[year * nAluet + idx])
+      alueBirths.push(values[nTiedot * nAluet * year + idx * nTiedot + 0]);
+      console.log(nTiedot * nAluet * year + idx * nTiedot + 0);
+      alueDeaths.push(values[nTiedot * nAluet * year + idx * nTiedot + 1]);
+      console.log(nTiedot * nAluet * year + idx * nTiedot + 1);
+      aluePopu.push(values[nTiedot * nAluet * year + idx * nTiedot + 2]);
+      console.log(nTiedot * nAluet * year + idx * nTiedot + 2);
     }
     dataset.data[idx] = {
       name: alue,
       values: aluePopu
-    }
-  })
-  console.log(dataset)
+    };
 
-  return dataset;
+    if (alue === "WHOLE COUNTRY") {
+      dataset2.data[0] = {
+        name: "births",
+        values: alueBirths
+      };
+
+      dataset2.data[1] = {
+        name: "deaths",
+        values: alueDeaths
+      };
+    }
+  });
+  return { dataset, dataset2 };
 };
 
 const buildChart = (dataset) => {
@@ -113,85 +137,87 @@ const buildChart = (dataset) => {
   const chartData = {
     labels: dataset.years,
     datasets: dataset.data
-  }
+  };
 
   const chart = new frappe.Chart("#chart", {
-    title: 'Finnish population from ' + dataset.years[0] +  ' to ' + dataset.years[nYears-1],
+    title:
+      "Finnish population from " +
+      dataset.years[0] +
+      " to " +
+      dataset.years[nYears - 1],
     data: chartData,
     type: "line",
-    colors: ['#eb5146'],
+    colors: ["#eb5146"],
     height: 450
-  })
-}
+  });
+};
 
 const submitButton = document.getElementById("submit-data");
 const inputArea = document.getElementById("input-area");
 const addPrediction = document.getElementById("add-data");
 
 const reloadchart = async () => {
-  dataset = await getData();
+  await getData();
   console.log(dataset);
-  buildChart(dataset)
+  buildChart(dataset);
+  return dataset;
 };
 
-const {areaName, areaCode} = getAreaCode()
+const { areaName, areaCode } = getAreaCode();
 //console.log(areaName)
-reloadchart();
+dataset = reloadchart();
 
 const addArea = (code) => {
   if (!jsonQuery.query[1].selection.values.includes(code)) {
     jsonQuery.query[1].selection.values.push(code);
   }
-}
+};
 
 submitButton.addEventListener("click", async function () {
-  let areas = await getAreaCode()
-  console.log(areas)
-  let code
+  let areas = await getAreaCode();
+  console.log(areas);
+  let code;
   let searchArea = inputArea.value;
   let areaName = areas.areaName;
   let areaCode = areas.areaCode;
   try {
     areaName.forEach((name, nameIdx) => {
       if (name.toLowerCase() === searchArea.toLowerCase()) {
-        code = areaCode[nameIdx]
-        throw 'Break';
+        code = areaCode[nameIdx];
+        throw "Break";
       }
-    })
+    });
+  } catch (e) {
+    if (e !== "Break") throw e;
   }
-  catch (e) {
-    if (e !== 'Break') throw e
-  }
-  
-  console.log('code is '+ code)
-  if (!code) return;
-  console.log('code is '+ code)
 
-  addArea(code)
+  console.log("code is " + code);
+  if (!code) return;
+  console.log("code is " + code);
+
+  addArea(code);
   reloadchart();
-})
+});
 
 addPrediction.addEventListener("click", () => {
   let nYears = dataset.years.length;
-  dataset.years.push((Number(dataset.years[nYears-1])+1).toString())
+  dataset.years.push((Number(dataset.years[nYears - 1]) + 1).toString());
   dataset.data.forEach((alue, alueIdx) => {
     let meanDelta = 0;
     dataset.data[alueIdx].values.forEach((point, point_Idx) => {
-      point = Number(point)
-      next_point = Number(dataset.data[alueIdx].values[point_Idx + 1])
-      if (point_Idx == nYears-1) {
-        meanDelta = meanDelta / (nYears-1) + point;
-      }
-      else {
+      point = Number(point);
+      let next_point = Number(dataset.data[alueIdx].values[point_Idx + 1]);
+      if (point_Idx == nYears - 1) {
+        meanDelta = meanDelta / (nYears - 1) + point;
+      } else {
         meanDelta = meanDelta + (next_point - point);
       }
-      console.log(meanDelta)
-    })
-    dataset.data[alueIdx].values.push(meanDelta)
-    console.log(meanDelta)
-    console.log(dataset.data[alueIdx].values) 
-
-  })
-  console.log(dataset)
-  buildChart(dataset)
-})
+      console.log(meanDelta);
+    });
+    dataset.data[alueIdx].values.push(meanDelta);
+    console.log(meanDelta);
+    console.log(dataset.data[alueIdx].values);
+  });
+  console.log(dataset);
+  buildChart(dataset);
+});
