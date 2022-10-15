@@ -53,9 +53,22 @@ const jsonQuery = {
   }
 };
 
+const getAreaCode = async () => {
+  const url = URL;
+  const res = await fetch(url)
+  const data = await res.json()
+  console.log(data)
+
+  let areaName = data.variables[1].valueTexts
+  console.log(areaName)
+  let areaCode = data.variables[1].values
+  console.log(areaCode)
+  return {areaName, areaCode};
+}
+
+
 const getData = async () => {
-  const url =
-    "https://statfin.stat.fi/PxWeb/api/v1/en/StatFin/synt/statfin_synt_pxt_12dy.px";
+  const url = URL;
   const res = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -108,10 +121,50 @@ const buildChart = (data) => {
 
 }
 
+const submitButton = document.getElementById("submit-data");
+const inputArea = document.getElementById("input-area");
+
+
 const main = async () => {
   const data = await getData();
   console.log(data);
   buildChart(data)
 };
 
+const {areaName, areaCode} = getAreaCode()
+//console.log(areaName)
 main();
+
+const addArea = (code) => {
+  if (!jsonQuery.query[1].selection.values.includes(code)) {
+    jsonQuery.query[1].selection.values.push(code);
+  }
+}
+
+submitButton.addEventListener("click", async function () {
+  let areas = await getAreaCode()
+  console.log(areas)
+  let code
+  let searchArea = inputArea.value;
+  let areaName = areas.areaName;
+  let areaCode = areas.areaCode;
+  try {
+    areaName.forEach((name, nameIdx) => {
+      if (name.toLowerCase() === searchArea.toLowerCase()) {
+        code = areaCode[nameIdx]
+        throw 'Break';
+      }
+    })
+  }
+  catch (e) {
+    if (e !== 'Break') throw e
+  }
+  
+  console.log('code is '+ code)
+  if (!code) return;
+  console.log('code is '+ code)
+
+  addArea(code)
+  main();
+})
+
