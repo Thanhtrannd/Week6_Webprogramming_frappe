@@ -1,3 +1,5 @@
+import { Chart } from "frappe-charts/dist/frappe-charts.esm.js";
+
 var dataset;
 var dataset2;
 
@@ -67,14 +69,14 @@ const getData = async () => {
     return;
   }
   const data = await res.json();
-  console.log(data)
+  console.log(data);
   const years = Object.values(data.dimension.Vuosi.category.label);
   const aluet = Object.values(data.dimension.Alue.category.label);
   const population = data.value;
   const values = data.value;
 
   const nTiedot = Object.values(data.dimension.Tiedot.category.label).length;
-  
+
   let nAluet = aluet.length;
   let nYears = years.length;
 
@@ -89,38 +91,36 @@ const getData = async () => {
   };
 
   aluet.forEach((alue, idx) => {
-    let aluePopu = []
-    let alueBirths = []
-    let alueDeaths = []
+    let aluePopu = [];
+    let alueBirths = [];
+    let alueDeaths = [];
     for (let year = 0; year < nYears; year++) {
       //aluePopu.push(population[year * nAluet + idx])
-      alueBirths.push(values[nTiedot * nAluet * year + idx * nTiedot + 0])
-      console.log(nTiedot * nAluet * year + idx * nTiedot + 0)
-      alueDeaths.push(values[nTiedot * nAluet * year + idx * nTiedot + 1])
-      console.log(nTiedot * nAluet * year + idx * nTiedot + 1)
-      aluePopu.push(values[nTiedot * nAluet * year + idx * nTiedot + 2])
-      console.log(nTiedot * nAluet * year + idx * nTiedot + 2)
+      alueBirths.push(values[nTiedot * nAluet * year + idx * nTiedot + 0]);
+      console.log(nTiedot * nAluet * year + idx * nTiedot + 0);
+      alueDeaths.push(values[nTiedot * nAluet * year + idx * nTiedot + 1]);
+      console.log(nTiedot * nAluet * year + idx * nTiedot + 1);
+      aluePopu.push(values[nTiedot * nAluet * year + idx * nTiedot + 2]);
+      console.log(nTiedot * nAluet * year + idx * nTiedot + 2);
     }
     dataset.data[idx] = {
       name: alue,
       values: aluePopu
-    }
+    };
 
-    if (alue === 'WHOLE COUNTRY') {
+    if (alue === "WHOLE COUNTRY") {
       dataset2.data[0] = {
-        name: 'births',
+        name: "births",
         values: alueBirths
-      }
-  
-      dataset2.data[1] = {
-        name: 'deaths',
-        values: alueDeaths
-      }
-    }
-    
+      };
 
-  })
-  return {dataset, dataset2};
+      dataset2.data[1] = {
+        name: "deaths",
+        values: alueDeaths
+      };
+    }
+  });
+  return { dataset, dataset2 };
 };
 
 const buildNewChart = (dataset2) => {
@@ -129,23 +129,25 @@ const buildNewChart = (dataset2) => {
   const newchartData = {
     labels: dataset2.years,
     datasets: dataset2.data
-  }
+  };
 
-  const chart = new frappe.Chart("#new_chart", {
-    title: 'Finnish Births and Deaths from ' + dataset2.years[0] +  ' to ' + dataset2.years[nYears-1],
+  const chart = new Chart("#new_chart", {
+    title:
+      "Finnish Births and Deaths from " +
+      dataset2.years[0] +
+      " to " +
+      dataset2.years[nYears - 1],
     data: newchartData,
     type: "bar",
-    colors: ['#63d0ff', '#363636'],
+    colors: ["#63d0ff", "#363636"],
     height: 450
-  })
-}
-
-
-
-const reloadchart = async () => {
-  let {dataset, dataset2} = await getData();
-  console.log(dataset2);
-  buildNewChart(dataset2)
+  });
 };
 
-reloadchart()
+const reloadchart = async () => {
+  let { dataset, dataset2 } = await getData();
+  console.log(dataset2);
+  buildNewChart(dataset2);
+};
+
+reloadchart();

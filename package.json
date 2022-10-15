@@ -8,7 +8,7 @@
     "build": "parcel build index.html"
   },
   "dependencies": {
-    "frappe-charts": "2.0.0-rc9",
+    "frappe-charts": "1.6.2",
     "parcel-bundler": "^1.6.1"
   },
   "devDependencies": {

@@ -1,3 +1,5 @@
+import { Chart } from "frappe-charts/dist/frappe-charts.esm.js";
+
 var dataset;
 var dataset2;
 
@@ -139,7 +141,7 @@ const buildChart = (dataset) => {
     datasets: dataset.data
   };
 
-  const chart = new frappe.Chart("#chart", {
+  const chart = new Chart("#chart", {
     title:
       "Finnish population from " +
       dataset.years[0] +
