@@ -69,9 +69,49 @@ const getData = async () => {
   return data;
 };
 
+const buildChart = (data) => {
+  const years = Object.values(data.dimension.Vuosi.category.label);
+  const aluet = Object.values(data.dimension.Alue.category.label);
+  const labels = Object.values(data.dimension.Vuosi.category.label);
+  const population = data.value;
+
+  
+  let nAluet = aluet.length;
+  let nYears = years.length;
+
+  let dataset = [];
+  aluet.forEach((alue, idx) => {
+    let aluePopu = []
+    for (let year = 0; year < nYears; year++) {
+      aluePopu.push(population[year * nAluet + idx])
+    }
+    dataset[idx] = {
+      name: alue,
+      values: aluePopu
+    }
+  })
+  console.log(dataset)
+
+  const chartData = {
+    labels: years,
+    datasets: dataset
+  }
+
+  const chart = new frappe.Chart("#chart", {
+    title: 'Finnish population from ' + years[0] +  ' to ' + years[nYears-1],
+    data: chartData,
+    type: "line",
+    colors: ['#eb5146'],
+    height: 450
+  })
+
+
+}
+
 const main = async () => {
   const data = await getData();
   console.log(data);
+  buildChart(data)
 };
 
 main();
